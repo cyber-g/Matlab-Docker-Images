@@ -18,7 +18,6 @@ Both install these products into the existing MATLAB installation using
 - `Communications_Toolbox`
 - `DSP_System_Toolbox` (`Signal_Blocks` is a license feature, not an MPM product name)
 - `Signal_Processing_Toolbox`
-- `Simulink` for block libraries
 
 The deep learning variant also retains all products from its parent image.
 Both preserve the parent entrypoint and command and run as user `matlab`.
@@ -63,7 +62,7 @@ docker pull yourname/matlab:r2024a-dl-comms-signalblocks-v1
 docker run --rm \
   -e MLM_LICENSE_FILE=27000@license-server \
   yourname/matlab:r2024a-dl-comms-signalblocks-v1 \
-  -batch "assert(strcmp(version('-release'),'2024a')); ver; assert(~isempty(ver('comm'))); assert(~isempty(ver('dsp'))); assert(~isempty(ver('signal'))); assert(~isempty(ver('simulink')))"
+  -batch "assert(strcmp(version('-release'),'2024a')); ver; assert(~isempty(ver('comm'))); assert(~isempty(ver('dsp'))); assert(~isempty(ver('signal')))"
 ```
 
 This checks the release and installed products, not license availability.

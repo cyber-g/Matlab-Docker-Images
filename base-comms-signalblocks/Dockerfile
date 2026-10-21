@@ -13,7 +13,7 @@ RUN wget -q https://www.mathworks.com/mpm/glnxa64/mpm -O mpm \
     && sudo HOME="${HOME}" ./mpm install \
         --release=R2024a \
         --destination="${MATLAB_ROOT}" \
-        --products Communications_Toolbox DSP_System_Toolbox Signal_Processing_Toolbox Simulink \
+        --products Communications_Toolbox DSP_System_Toolbox Signal_Processing_Toolbox \
     && sudo rm -f mpm /tmp/mathworks_root.log
 
 WORKDIR /home/matlab
