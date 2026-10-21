@@ -29,12 +29,14 @@ jobs:
       DOCKERHUB_REPOSITORY: ${{ vars.DOCKERHUB_REPOSITORY }}
     steps:
       - name: Validate publication settings
+        id: validate-publication-settings
         shell: bash
         run: |
-          if [[ ! "$IMAGE_VERSION" =~ ^[1-9][0-9]*$ ]]; then
+          if [[ ! "$IMAGE_VERSION" =~ ^([1-9][0-9]*)(\.0+)?$ ]]; then
             echo "::error::Version must be a positive integer."
             exit 1
           fi
+          echo "version=${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
           if [[ -z "$DOCKERHUB_REPOSITORY" ]]; then
             echo "::error::Set DOCKERHUB_REPOSITORY to your Docker Hub namespace/repository."
             exit 1
@@ -52,4 +54,4 @@ jobs:
         with:
           context: ./${{ matrix.context }}
           push: true
-          tags: ${{ env.DOCKERHUB_REPOSITORY }}:r2024a-${{ matrix.variant }}-v${{ env.IMAGE_VERSION }}
+          tags: ${{ env.DOCKERHUB_REPOSITORY }}:r2024a-${{ matrix.variant }}-v${{ steps.validate-publication-settings.outputs.version }}
