@@ -20,10 +20,8 @@ jobs:
       max-parallel: 1
       matrix:
         include:
-          - context: base
-            variant: base
-          - context: deep-learning
-            variant: dl
+          - context: base-comms-signalblocks
+            variant: base-comms-signalblocks
           - context: deep-learning-comms-signalblocks
             variant: dl-comms-signalblocks
     env:
@@ -53,6 +51,5 @@ jobs:
         uses: docker/build-push-action@v6.18.0
         with:
           context: ./${{ matrix.context }}
-          platforms: linux/amd64
           push: true
           tags: ${{ env.DOCKERHUB_REPOSITORY }}:r2024a-${{ matrix.variant }}-v${{ env.IMAGE_VERSION }}

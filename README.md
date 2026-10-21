@@ -1,104 +1,69 @@
 # Matlab-Docker-Images
 
-Images Docker basées exclusivement sur **MATLAB R2024a**, pour Linux `amd64`.
+Docker images based exclusively on **MATLAB R2024a**.
 
-## Variantes et tags
+## Images and tags
 
-Un seul dépôt Docker Hub (par exemple `moncompte/matlab`) peut contenir toutes
-les variantes : le **tag**, après `:`, indique laquelle télécharger.
+Both variants share one Docker Hub repository, for example `yourname/matlab`.
+The tag after `:` selects the variant and revision.
 
-| Dossier de build | Image MathWorks parente | Tag proposé |
+| Build directory | MathWorks parent image | Docker tag |
 | --- | --- | --- |
-| `base/` | `mathworks/matlab:r2024a` | `r2024a-base-v1` |
-| `deep-learning/` | `mathworks/matlab-deep-learning:r2024a` | `r2024a-dl-v1` |
+| `base-comms-signalblocks/` | `mathworks/matlab:r2024a` | `r2024a-base-comms-signalblocks-v1` |
 | `deep-learning-comms-signalblocks/` | `mathworks/matlab-deep-learning:r2024a` | `r2024a-dl-comms-signalblocks-v1` |
 
-La variante enrichie conserve les produits de l’image deep learning et ajoute :
+Both install these products into the existing MATLAB installation using
+[MATLAB Package Manager (MPM)](https://github.com/mathworks-ref-arch/matlab-dockerfile/tree/main/alternates/building-on-matlab-docker-image):
 
-- `Communications_Toolbox` (Communications Toolbox, pas `communication_toolbox`) ;
-- `DSP_System_Toolbox` (DSP System Toolbox, associé à la fonctionnalité de
-  licence `Signal_Blocks`, pas à un produit MPM nommé `signal_blocks`) ;
-- `Signal_Processing_Toolbox`, une dépendance requise ;
-- `Simulink`, pour utiliser les bibliothèques de blocs.
+- `Communications_Toolbox`
+- `DSP_System_Toolbox` (`Signal_Blocks` is a license feature, not an MPM product name)
+- `Signal_Processing_Toolbox`
+- `Simulink` for block libraries
 
-L’installation utilise le [MATLAB Package Manager (MPM)](https://github.com/mathworks-ref-arch/matlab-dockerfile/tree/main/alternates/building-on-matlab-docker-image)
-dans l’installation MATLAB existante. Les Dockerfiles conservent l’utilisateur
-`matlab`, l’entrypoint et la commande par défaut des images parentes.
-Le contenu deep learning est celui de [l’image officielle](https://github.com/mathworks-ref-arch/container-images/blob/main/matlab/README_DEEP_LEARNING.md) ;
-aucune liste de produits supplémentaire n’était jointe à la demande.
+The deep learning variant also retains all products from its parent image.
+Both preserve the parent entrypoint and command and run as user `matlab`.
 
-La convention est `r2024a-<variante>-v<révision>`. Incrémenter la révision
-(`v2`, `v3`, etc.) pour chaque nouvelle publication ; ne pas réutiliser un tag
-déjà publié si l’on veut conserver les anciennes versions. Docker Hub permet
-techniquement d’écraser un tag. Aucun tag `latest` n’est publié, afin de rendre
-la variante et la version explicites. Les tags parents MathWorks restent
-modifiables : une reconstruction peut donc récupérer une image parente mise à jour.
+Tags follow `r2024a-<variant>-v<revision>`. Increase the revision for new
+publications to avoid overwriting previous tags. No `latest` tag is published.
+MathWorks parent tags can change, so rebuilding may pick up upstream updates.
 
-## Construire en local
+## Build locally
 
-Depuis la racine du dépôt, remplacer `moncompte/matlab` par votre dépôt Docker Hub :
+From the repository root, replace `yourname/matlab` with your Docker Hub repository:
 
 ```sh
-docker build --platform linux/amd64 -t moncompte/matlab:r2024a-base-v1 ./base
-docker build --platform linux/amd64 -t moncompte/matlab:r2024a-dl-v1 ./deep-learning
-docker build --platform linux/amd64 -t moncompte/matlab:r2024a-dl-comms-signalblocks-v1 ./deep-learning-comms-signalblocks
+docker build -t yourname/matlab:r2024a-base-comms-signalblocks-v1 ./base-comms-signalblocks
+docker build -t yourname/matlab:r2024a-dl-comms-signalblocks-v1 ./deep-learning-comms-signalblocks
 ```
 
-Ces images et les téléchargements MPM sont volumineux : prévoir une connexion
-Internet, suffisamment d’espace disque et du temps pour les builds.
+## Publish to Docker Hub
 
-## Publier sur Docker Hub avec GitHub Actions
+1. Create a Docker Hub repository and an access token with write permission.
+2. In GitHub **Settings → Secrets and variables → Actions**, configure:
+   - Secrets: `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN`.
+   - Variable: `DOCKERHUB_REPOSITORY`, e.g. `yourname/matlab` (no tag or URL prefix).
+3. Once the workflow is on the default branch, open **Actions →
+   Publish R2024a images to Docker Hub → Run workflow** and enter a positive
+   numeric revision, e.g. `1`.
 
-1. Créer un dépôt Docker Hub, par exemple `moncompte/matlab`, avec la visibilité
-   appropriée à vos droits de redistribution MathWorks.
-2. Créer un jeton d’accès Docker Hub autorisé à écrire dans ce dépôt.
-3. Dans GitHub, ouvrir **Settings → Secrets and variables → Actions** :
-   - secrets : `DOCKERHUB_USERNAME` (identifiant Docker Hub) et
-     `DOCKERHUB_TOKEN` (jeton d’accès) ;
-   - variable : `DOCKERHUB_REPOSITORY`, par exemple `moncompte/matlab`
-     (sans tag et sans `https://`).
-4. Une fois le workflow présent sur la branche par défaut, ouvrir **Actions →
-   Publish R2024a images to Docker Hub → Run workflow**. Choisir la branche
-   contenant les Dockerfiles et saisir la révision numérique, par exemple `1`.
+The manual-only workflow builds and pushes both tags sequentially. No Git tag is
+required, and pull requests do not publish images. MATLAB images are large:
+allow sufficient disk space and use a larger runner if needed.
 
-Le workflow construit puis publie les trois tags du tableau, sans nécessiter
-de tag Git. Il est déclenché manuellement uniquement ; les pull requests ne
-publient rien et n’utilisent pas les secrets Docker Hub. Les builds sont
-séquentiels pour limiter la charge. Si le runner manque de disque pour les
-images MATLAB, utiliser un runner disposant de plus de stockage en adaptant
-`runs-on` dans le workflow.
+## Run and verify
 
-Pour publier manuellement une image déjà construite :
+A valid MATLAB license covering the products you use is required at runtime.
+Check MathWorks redistribution terms before publishing, especially to a public
+repository. Never include licenses, tokens or credentials in images or build arguments.
+
+Pull a specific tag and run with your authorized network license server:
 
 ```sh
-docker login
-docker push moncompte/matlab:r2024a-dl-comms-signalblocks-v1
-```
-
-Chaque tag se télécharge indépendamment :
-
-```sh
-docker pull moncompte/matlab:r2024a-dl-comms-signalblocks-v1
-```
-
-## Utiliser et vérifier une image
-
-L’installation des produits **ne fournit pas de licence MATLAB**. Une licence
-valide couvrant les produits utilisés reste nécessaire à l’exécution.
-Vérifier également les conditions MathWorks avant toute redistribution,
-notamment sur un dépôt Docker Hub public. La licence de ce dépôt ne remplace
-pas les licences des logiciels MathWorks.
-
-Exemple avec un serveur de licences réseau autorisé (remplacer son adresse) :
-
-```sh
-docker run --rm --platform linux/amd64 \
-  -e MLM_LICENSE_FILE=27000@serveur-licences \
-  moncompte/matlab:r2024a-dl-comms-signalblocks-v1 \
+docker pull yourname/matlab:r2024a-dl-comms-signalblocks-v1
+docker run --rm \
+  -e MLM_LICENSE_FILE=27000@license-server \
+  yourname/matlab:r2024a-dl-comms-signalblocks-v1 \
   -batch "assert(strcmp(version('-release'),'2024a')); ver; assert(~isempty(ver('comm'))); assert(~isempty(ver('dsp'))); assert(~isempty(ver('signal'))); assert(~isempty(ver('simulink')))"
 ```
 
-Cette commande vérifie la release et la présence des produits ajoutés ; elle
-ne garantit pas la disponibilité de chaque licence. Ne jamais inclure de
-fichier de licence, de jeton ou d’identifiants dans les Dockerfiles, les
-arguments de build ou les images.
+This checks the release and installed products, not license availability.
